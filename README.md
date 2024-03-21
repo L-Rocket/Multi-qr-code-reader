@@ -1,4 +1,6 @@
 # Multi-qr-code-reader
+### demo
+See Live Preview in browser.
 ![e501c5338f4779234674c304f18ad5c](https://github.com/L-Rocket/Multi-qr-code-reader/assets/93325265/21284dea-8440-4fb6-b3c9-0b1fbf728008)
 ![40fc36a93235450f29c7e15bad3170d](https://github.com/L-Rocket/Multi-qr-code-reader/assets/93325265/5e9f7eb5-5b59-4cf8-bb41-67b48d447f8f)
 
