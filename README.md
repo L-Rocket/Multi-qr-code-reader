@@ -1,8 +1,9 @@
 # Multi-qr-code-reader
 ## Demo
 See [Live Preview](https://l-rocket.github.io/) in browser.
-![e501c5338f4779234674c304f18ad5c](https://github.com/L-Rocket/Multi-qr-code-reader/assets/93325265/21284dea-8440-4fb6-b3c9-0b1fbf728008)
-![40fc36a93235450f29c7e15bad3170d](https://github.com/L-Rocket/Multi-qr-code-reader/assets/93325265/5e9f7eb5-5b59-4cf8-bb41-67b48d447f8f)
+## Example
+![image](https://github.com/L-Rocket/Multi-qr-code-reader/assets/93325265/817473c1-abd4-4560-92b8-784c770437aa)
+![37ed2e65a26cbff985ff3a0d308dd30](https://github.com/L-Rocket/Multi-qr-code-reader/assets/93325265/a2207bce-d533-4fd7-8855-a7c50f0e3696)
 
 JS code completely, which can scan multiple QRcode at the same time.
 
