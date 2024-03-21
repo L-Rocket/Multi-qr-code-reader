@@ -1,4 +1,6 @@
-# vue3_TS
+# Multi-qr-code-reader
+
+JS code completely, which can scan multiple QRcode at the same time.
 
 This template should help get you started developing with Vue 3 in Vite.
 
