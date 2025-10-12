@@ -5,6 +5,7 @@ import UnoCSS from 'unocss/vite';
 import path from 'path';
 
 export default defineConfig({
+  base: './',
   plugins: [
     vue(),
     UnoCSS()
@@ -22,6 +23,6 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['src\assets\alert.mp3'],
+    include: ['src/assets/alert.mp3'],
   },
 });
