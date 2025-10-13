@@ -12,6 +12,27 @@ JS code completely, which can scan multiple QRcode at the same time.
 
 This template should help get you started developing with Vue 3 in Vite.
 
+## Binary Tree DFS Implementation / 二叉树深度优先搜索实现
+
+This repository includes a complete implementation of Binary Tree Depth-First Search (DFS) algorithms with both recursive and iterative approaches. See the [detailed documentation](docs/BinaryTreeDFS.md) for more information.
+
+本仓库包含了二叉树深度优先搜索（DFS）算法的完整实现，包括递归和迭代两种方法。查看[详细文档](docs/BinaryTreeDFS.md)了解更多信息。
+
+**Features / 特性**:
+- ✅ Preorder, Inorder, and Postorder traversals / 前序、中序、后序遍历
+- ✅ Recursive and Iterative implementations / 递归和迭代实现
+- ✅ Tree search and depth calculation / 树搜索和深度计算
+- ✅ Full TypeScript support with generics / 完整的 TypeScript 泛型支持
+- ✅ Comprehensive examples and documentation / 全面的示例和文档
+
+**Quick Start / 快速开始**:
+```typescript
+import { BinaryTreeDFS, createTreeNode } from '@/utils/binaryTreeDFS';
+
+const root = createTreeNode(1, createTreeNode(2), createTreeNode(3));
+console.log(BinaryTreeDFS.preorder(root));  // [1, 2, 3]
+```
+
 ## Recommended IDE Setup
 
 [VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
