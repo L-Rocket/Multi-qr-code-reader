@@ -1,0 +1,49 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Organize output
+        run: |
+          mkdir final_dist
+          # Move main build (V1) to MultiQRcodeV1 subfolder
+          mv dist final_dist/MultiQRcodeV1
+          
+          # Copy AnotherWay (V2) to MultiQRcodeV2 subfolder
+          mkdir -p final_dist/MultiQRcodeV2
+          cp -r AnotherWay/* final_dist/MultiQRcodeV2/
+          
+          # Verify structure
+          ls -R final_dist
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./final_dist

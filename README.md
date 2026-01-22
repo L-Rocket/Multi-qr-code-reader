@@ -1,9 +1,9 @@
 # Multi-qr-code-reader
 ## Demo
-See [Live Preview](https://l-rocket.github.io/MultiQRcodeV1) in browser.
+See [Live Preview](https://l-rocket.github.io/projects/MultiQRcodeV1) in browser.
 (if this does not scan QRcode immediately, please click the return button and restart. And this is a bug to be fixed soon)
 
-see new way to achieve this [Live Preview](https://l-rocket.github.io/MultiQRcodeV2) here.
+see new way to achieve this [Live Preview](https://l-rocket.github.io/projects/MultiQRcodeV2) here.
 ## Example
 ![image](https://github.com/L-Rocket/Multi-qr-code-reader/assets/93325265/817473c1-abd4-4560-92b8-784c770437aa)
 ![37ed2e65a26cbff985ff3a0d308dd30](https://github.com/L-Rocket/Multi-qr-code-reader/assets/93325265/a2207bce-d533-4fd7-8855-a7c50f0e3696)
