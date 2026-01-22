@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi QR Code Scanner</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    
+    h1 {
+      text-align: center;
+      margin-top: 0;
+      color: #2c3e50;
+    }
+    
+    .video-container {
+      position: relative;
+      width: 100%;
+      height: 0;
+      padding-bottom: 75%; /* 4:3 ratio */
+      background: #000;
+      overflow: hidden;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain; /* Changed to contain instead of cover */
+    }
+    
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain; /* Match video */
+      display: none; /* Hidden canvas for processing */
+    }
+    
+    .scanner-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    .qr-highlight {
+      position: absolute;
+      border: 3px solid #00FF00;
+      border-radius: 4px;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.5);
+      animation: pulse 2s infinite;
+    }
+    
+    .qr-label {
+      position: absolute;
+      top: -25px;
+      left: 0;
+      background: rgba(0,0,0,0.7);
+      color: #00FF00;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      white-space: nowrap;
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    /* Debug overlay to show video dimensions */
+    .debug-overlay {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      z-index: 20;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    button {
+      flex: 1;
+      padding: 10px 15px;
+      background: #2c3e50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    
+    button:hover {
+      background: #1a2533;
+    }
+    
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .status-bar {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      font-size: 14px;
+      color: #666;
+    }
+    
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ccc;
+      margin-right: 8px;
+    }
+    
+    .status-indicator.active {
+      background: #4caf50;
+    }
+    
+    .implementation {
+      margin-left: auto;
+      font-style: italic;
+      font-size: 12px;
+    }
+    
+    .results-container {
+      border-top: 1px solid #eee;
+      padding-top: 20px;
+    }
+    
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .results-header h3 {
+      margin: 0;
+    }
+    
+    .no-results {
+      text-align: center;
+      padding: 30px 0;
+      color: #999;
+      font-style: italic;
+    }
+    
+    .results-list {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #eee;
+      border-radius: 4px;
+    }
+    
+    .result-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .result-item:last-child {
+      border-bottom: none;
+    }
+    
+    .result-content {
+      flex: 1;
+      overflow: hidden;
+    }
+    
+    .result-value {
+      font-weight: 500;
+      word-break: break-all;
+      margin-bottom: 4px;
+    }
+    
+    .result-meta {
+      display: flex;
+      font-size: 12px;
+      color: #666;
+    }
+    
+    .result-time {
+      margin-right: 10px;
+    }
+    
+    .delete-btn {
+      background: transparent;
+      color: #ff5252;
+      padding: 4px 8px;
+      margin: 0;
+      font-size: 18px;
+    }
+    
+    .delete-btn:hover {
+      background: #ffebee;
+    }
+    
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(0,255,0,0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(0,255,0,0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(0,255,0,0);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .controls {
+        flex-direction: column;
+      }
+      
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="container">
+    <h1>Multi QR Code Scanner</h1>
+    
+    <div class="video-container" ref="videoContainer">
+      <video ref="video" autoplay playsinline muted></video>
+      <canvas ref="canvas"></canvas>
+      <div class="scanner-overlay">
+        <div v-for="(result, index) in visibleResults" :key="index" 
+             class="qr-highlight" 
+             :style="getHighlightStyle(result)">
+          <span class="qr-label">{{ result.value.substring(0, 15) }}{{ result.value.length > 15 ? '...' : '' }}</span>
+        </div>
+      </div>
+      
+      <!-- Debug overlay to show dimensions -->
+      <div class="debug-overlay" v-if="isScanning">
+        Video: {{ videoWidth }}x{{ videoHeight }} | 
+        Display: {{ displayWidth }}x{{ displayHeight }} |
+        Scale: {{ scaleX.toFixed(2) }}x{{ scaleY.toFixed(2) }}
+      </div>
+    </div>
+    
+    <div class="controls">
+      <button @click="toggleScanner">{{ isScanning ? 'Pause Scanner' : 'Start Scanner' }}</button>
+      <button @click="toggleCamera" :disabled="!isScanning || !hasCameras">Switch Camera</button>
+      <button @click="clearResults">Clear Results</button>
+    </div>
+    
+    <div class="status-bar">
+      <span :class="['status-indicator', { active: isScanning }]"></span>
+      <span>{{ scannerStatus }}</span>
+      <span v-if="scannerImplementation" class="implementation">
+        Using: {{ scannerImplementation }}
+      </span>
+    </div>
+    
+    <div class="results-container">
+      <div class="results-header">
+        <h3>Scanned QR Codes ({{ results.length }})</h3>
+        <div v-if="results.length">
+          Last scan: {{ formatTime(getMostRecentScan()) }}
+        </div>
+      </div>
+      
+      <div v-if="!results.length" class="no-results">
+        No QR codes scanned yet
+      </div>
+      
+      <div v-else class="results-list">
+        <div v-for="(result, index) in sortedResults" :key="`${result.value}-${index}`" class="result-item">
+          <div class="result-content">
+            <div class="result-value">{{ result.value }}</div>
+            <div class="result-meta">
+              <span class="result-time">{{ formatTime(result.timestamp) }}</span>
+              <span v-if="result.format">{{ result.format }}</span>
+            </div>
+          </div>
+          <button class="delete-btn" @click="removeResult(index)">×</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vue 3 CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  
+  <!-- ZXing for fallback (loaded dynamically when needed) -->
+  <script>
+    // Create the Vue app
+    const app = Vue.createApp({
+      data() {
+        return {
+          isScanning: false,
+          results: [],
+          visibleResults: [],
+          scannerStatus: 'Ready to scan',
+          scannerImplementation: null,
+          currentCamera: 0,
+          cameras: [],
+          hasCameras: false,
+          stream: null,
+          animationFrameId: null,
+          barcodeDetector: null,
+          zxingLoaded: false,
+          videoElem: null,
+          canvasElem: null,
+          containerElem: null,
+          // For coordinate mapping
+          videoWidth: 0,
+          videoHeight: 0,
+          displayWidth: 0,
+          displayHeight: 0,
+          scaleX: 1,
+          scaleY: 1,
+          offsetX: 0,
+          offsetY: 0
+        };
+      },
+      
+      computed: {
+        sortedResults() {
+          return [...this.results].sort((a, b) => {
+            return (b.timestamp?.getTime() || 0) - (a.timestamp?.getTime() || 0);
+          });
+        }
+      },
+      
+      mounted() {
+        // Get elements from refs after mounting
+        this.videoElem = this.$refs.video;
+        this.canvasElem = this.$refs.canvas;
+        this.containerElem = this.$refs.videoContainer;
+        
+        // Setup resize observer to track video container size changes
+        if (this.containerElem) {
+          const resizeObserver = new ResizeObserver(() => {
+            this.updateDisplayDimensions();
+          });
+          resizeObserver.observe(this.containerElem);
+        }
+        
+        // Listen for video metadata loaded to get actual dimensions
+        if (this.videoElem) {
+          this.videoElem.addEventListener('loadedmetadata', () => {
+            this.videoWidth = this.videoElem.videoWidth;
+            this.videoHeight = this.videoElem.videoHeight;
+            this.updateDisplayDimensions();
+          });
+        }
+        
+        // Check scanner support
+        this.checkScannerSupport();
+      },
+      
+      beforeUnmount() {
+        this.stopScanner();
+      },
+      
+      methods: {
+        updateDisplayDimensions() {
+          if (!this.videoElem || !this.containerElem) return;
+          
+          // Get the actual displayed dimensions of the video element
+          const videoRect = this.videoElem.getBoundingClientRect();
+          const containerRect = this.containerElem.getBoundingClientRect();
+          
+          this.displayWidth = videoRect.width;
+          this.displayHeight = videoRect.height;
+          
+          // Calculate scaling factors
+          if (this.videoWidth && this.videoHeight) {
+            this.scaleX = this.displayWidth / this.videoWidth;
+            this.scaleY = this.displayHeight / this.videoHeight;
+            
+            // Calculate offset (for when video doesn't fill the container with object-fit: contain)
+            this.offsetX = (containerRect.width - this.displayWidth) / 2;
+            this.offsetY = (containerRect.height - this.displayHeight) / 2;
+          }
+        },
+        
+        async checkScannerSupport() {
+          // Check for BarcodeDetector support
+          if ('BarcodeDetector' in window) {
+            try {
+              // Try to create detector and check formats
+              const detector = new window.BarcodeDetector();
+              const formats = await window.BarcodeDetector.getSupportedFormats?.() || [];
+              
+              if (formats.includes('qr_code')) {
+                this.scannerImplementation = 'BarcodeDetector';
+                this.barcodeDetector = new window.BarcodeDetector({
+                  formats: ['qr_code']
+                });
+                return;
+              }
+            } catch (e) {
+              console.warn('BarcodeDetector available but errored:', e);
+            }
+          }
+          
+          this.scannerImplementation = 'ZXing (will load when needed)';
+        },
+        
+        async toggleScanner() {
+          if (this.isScanning) {
+            this.stopScanner();
+          } else {
+            await this.startScanner();
+          }
+        },
+        
+        async startScanner() {
+          try {
+            if (!this.videoElem || !this.canvasElem) {
+              this.videoElem = this.$refs.video;
+              this.canvasElem = this.$refs.canvas;
+              this.containerElem = this.$refs.videoContainer;
+              if (!this.videoElem || !this.canvasElem) {
+                this.scannerStatus = 'Error: Could not access video/canvas elements';
+                return;
+              }
+            }
+            
+            this.scannerStatus = 'Initializing camera...';
+            
+            // Get list of cameras
+            try {
+              const devices = await navigator.mediaDevices.enumerateDevices();
+              this.cameras = devices.filter(device => device.kind === 'videoinput');
+              this.hasCameras = this.cameras.length > 1;
+            } catch (err) {
+              console.warn("Could not enumerate devices:", err);
+            }
+            
+            // Start the camera with safer constraints
+            let constraints = {
+              video: { 
+                facingMode: 'environment'
+              }
+            };
+            
+            // Only use deviceId if we have camera info and it's within bounds
+            if (this.cameras.length > 0 && this.currentCamera < this.cameras.length) {
+              try {
+                // First try with 'ideal' instead of 'exact' to be more forgiving
+                constraints = {
+                  video: { 
+                    deviceId: { ideal: this.cameras[this.currentCamera].deviceId },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                  }
+                };
+              } catch (err) {
+                console.warn("Camera selection error:", err);
+              }
+            }
+            
+            try {
+              this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+              this.videoElem.srcObject = this.stream;
+              await new Promise(resolve => {
+                this.videoElem.onloadedmetadata = () => {
+                  this.videoWidth = this.videoElem.videoWidth;
+                  this.videoHeight = this.videoElem.videoHeight;
+                  this.updateDisplayDimensions();
+                  resolve();
+                };
+              });
+              await this.videoElem.play();
+              
+              // Initialize the canvas after video dimensions are known
+              this.canvasElem.width = this.videoWidth || 640;
+              this.canvasElem.height = this.videoHeight || 480;
+              
+              // Update the display dimensions now that video is playing
+              this.updateDisplayDimensions();
+              
+              // If using ZXing and not loaded yet, load it
+              if (this.scannerImplementation && this.scannerImplementation.includes('ZXing') && !this.zxingLoaded) {
+                this.scannerStatus = 'Loading ZXing library...';
+                await this.loadZXingLibrary();
+              }
+              
+              this.isScanning = true;
+              this.scannerStatus = 'Scanning...';
+              this.startScanLoop();
+            } catch (err) {
+              console.error("Error accessing camera:", err);
+              this.scannerStatus = `Camera error: ${err.name}`;
+              
+              // Try again with simpler constraints
+              if (err.name === 'OverconstrainedError') {
+                try {
+                  this.scannerStatus = 'Retrying with basic camera settings...';
+                  this.stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                  this.videoElem.srcObject = this.stream;
+                  await this.videoElem.play();
+                  
+                  this.videoWidth = this.videoElem.videoWidth;
+                  this.videoHeight = this.videoElem.videoHeight;
+                  this.canvasElem.width = this.videoWidth || 640;
+                  this.canvasElem.height = this.videoHeight || 480;
+                  this.updateDisplayDimensions();
+                  
+                  if (this.scannerImplementation && this.scannerImplementation.includes('ZXing') && !this.zxingLoaded) {
+                    this.scannerStatus = 'Loading ZXing library...';
+                    await this.loadZXingLibrary();
+                  }
+                  
+                  this.isScanning = true;
+                  this.scannerStatus = 'Scanning...';
+                  this.startScanLoop();
+                } catch (fallbackErr) {
+                  this.scannerStatus = `Could not access any camera: ${fallbackErr.message}`;
+                  console.error('Final camera error:', fallbackErr);
+                }
+              }
+            }
+          } catch (error) {
+            this.scannerStatus = `Error: ${error instanceof Error ? error.message : 'Failed to access camera'}`;
+            console.error('Scanner error:', error);
+          }
+        },
+        
+        async loadZXingLibrary() {
+          // Load ZXing from CDN
+          return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js';
+            script.onload = () => {
+              this.zxingLoaded = true;
+              resolve();
+            };
+            script.onerror = reject;
+            document.body.appendChild(script);
+          });
+        },
+        
+        stopScanner() {
+          if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+          }
+          
+          if (this.stream) {
+            this.stream.getTracks().forEach(track => track.stop());
+            this.stream = null;
+          }
+          
+          if (this.videoElem) {
+            this.videoElem.srcObject = null;
+          }
+          
+          this.isScanning = false;
+          this.visibleResults = [];
+          this.scannerStatus = 'Scanner stopped';
+        },
+        
+        async startScanLoop() {
+          if (!this.isScanning || !this.videoElem || !this.canvasElem) return;
+          
+          try {
+            const video = this.videoElem;
+            const canvas = this.canvasElem;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            
+            if (!ctx) return;
+            
+            // Draw the current frame
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Update display dimensions with each frame
+            this.updateDisplayDimensions();
+            
+            // Detect QR codes based on implementation
+            let newResults = [];
+            
+            if (this.barcodeDetector) {
+              // Use native BarcodeDetector API
+              try {
+                const barcodes = await this.barcodeDetector.detect(video);
+                
+                newResults = barcodes.map(barcode => ({
+                  value: barcode.rawValue,
+                  format: barcode.format,
+                  boundingBox: {
+                    x: barcode.boundingBox.x,
+                    y: barcode.boundingBox.y,
+                    width: barcode.boundingBox.width,
+                    height: barcode.boundingBox.height
+                  }
+                }));
+              } catch (err) {
+                console.warn("BarcodeDetector error:", err);
+              }
+            } else if (window.ZXing && this.zxingLoaded) {
+              // Use ZXing library
+              try {
+                // Get image data
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                
+                // Setup ZXing
+                const hints = new Map();
+                const formats = [ZXing.BarcodeFormat.QR_CODE];
+                hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
+                hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+                
+                const reader = new ZXing.MultiFormatReader();
+                reader.setHints(hints);
+                
+                // Convert to luminance source
+                const luminanceSource = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
+                const binaryBitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminanceSource));
+                
+                // Attempt to decode multiple codes by region masking
+                const results = [];
+                try {
+                  // First try to decode
+                  const result = reader.decode(binaryBitmap);
+                  if (result) {
+                    const points = result.getResultPoints();
+                    const minX = Math.min(...points.map(p => p.getX()));
+                    const minY = Math.min(...points.map(p => p.getY()));
+                    const maxX = Math.max(...points.map(p => p.getX()));
+                    const maxY = Math.max(...points.map(p => p.getY()));
+                    
+                    results.push({
+                      value: result.getText(),
+                      format: 'qr_code',
+                      boundingBox: {
+                        x: minX,
+                        y: minY,
+                        width: maxX - minX,
+                        height: maxY - minY
+                      }
+                    });
+                    
+                    // Try to find other QR codes in different quadrants
+                    this.scanMultipleRegions(canvas, reader, results);
+                  }
+                } catch (e) {
+                  // No QR code found in full image, try scanning regions
+                  this.scanMultipleRegions(canvas, reader, results);
+                }
+                
+                newResults = results;
+              } catch (error) {
+                console.error('ZXing error:', error);
+              }
+            }
+            
+            // Update visible results for highlighting
+            this.visibleResults = newResults;
+            
+            // Process new unique results
+            for (const newResult of newResults) {
+              // Check if this result already exists
+              const exists = this.results.some(r => r.value === newResult.value);
+              if (!exists) {
+                // Add timestamp
+                newResult.timestamp = new Date();
+                this.results.push(newResult);
+              }
+            }
+            
+            // Schedule next scan
+            this.animationFrameId = requestAnimationFrame(() => this.startScanLoop());
+          } catch (error) {
+            console.error('Scan error:', error);
+            this.scannerStatus = 'Scan error occurred';
+            setTimeout(() => this.startScanLoop(), 1000); // Try again after a delay
+          }
+        },
+        
+        scanMultipleRegions(canvas, reader, results) {
+          // Divide the image into regions and scan each one
+          const regions = [
+            { x: 0, y: 0, w: canvas.width / 2, h: canvas.height / 2 },
+            { x: canvas.width / 2, y: 0, w: canvas.width / 2, h: canvas.height / 2 },
+            { x: 0, y: canvas.height / 2, w: canvas.width / 2, h: canvas.height / 2 },
+            { x: canvas.width / 2, y: canvas.height / 2, w: canvas.width / 2, h: canvas.height / 2 },
+          ];
+          
+          for (const region of regions) {
+            try {
+              const croppedCanvas = document.createElement('canvas');
+              const ctx = croppedCanvas.getContext('2d');
+              croppedCanvas.width = region.w;
+              croppedCanvas.height = region.h;
+              ctx.drawImage(canvas, region.x, region.y, region.w, region.h, 0, 0, region.w, region.h);
+              
+              const luminanceSource = new ZXing.HTMLCanvasElementLuminanceSource(croppedCanvas);
+              const binaryBitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminanceSource));
+              
+              try {
+                const result = reader.decode(binaryBitmap);
+                const points = result.getResultPoints();
+                const minX = Math.min(...points.map(p => p.getX()));
+                const minY = Math.min(...points.map(p => p.getY()));
+                const maxX = Math.max(...points.map(p => p.getX()));
+                const maxY = Math.max(...points.map(p => p.getY()));
+                
+                const value = result.getText();
+                
+                // Check if we already found this code
+                if (!results.some(r => r.value === value)) {
+                  results.push({
+                    value: value,
+                    format: 'qr_code',
+                    boundingBox: {
+                      x: region.x + minX,
+                      y: region.y + minY,
+                      width: maxX - minX,
+                      height: maxY - minY
+                    }
+                  });
+                }
+              } catch (e) {
+                // No QR code in this region
+              }
+            } catch (e) {
+              // Error processing region
+            }
+          }
+        },
+        
+        toggleCamera() {
+          if (!this.hasCameras) return;
+          
+          // Stop current scanner
+          this.stopScanner();
+          
+          // Switch to next camera
+          this.currentCamera = (this.currentCamera + 1) % this.cameras.length;
+          
+          // Restart scanner with new camera
+          this.startScanner();
+        },
+        
+        clearResults() {
+          this.results = [];
+        },
+        
+        removeResult(index) {
+          this.results.splice(index, 1);
+        },
+        
+        getHighlightStyle(result) {
+          if (!result.boundingBox) return {};
+          
+          const { x, y, width, height } = result.boundingBox;
+          
+          // Apply scaling and offset to match actual video display size
+          const scaledX = (x * this.scaleX) + this.offsetX;
+          const scaledY = (y * this.scaleY) + this.offsetY;
+          const scaledWidth = width * this.scaleX;
+          const scaledHeight = height * this.scaleY;
+          
+          return {
+            left: `${scaledX}px`,
+            top: `${scaledY}px`,
+            width: `${scaledWidth}px`,
+            height: `${scaledHeight}px`
+          };
+        },
+        
+        getMostRecentScan() {
+          if (!this.results.length) return null;
+          
+          // Find most recent timestamp
+          return this.results.reduce((latest, current) => {
+            if (!latest) return current.timestamp;
+            if (!current.timestamp) return latest;
+            return current.timestamp > latest ? current.timestamp : latest;
+          }, null);
+        },
+        
+        formatTime(date) {
+          if (!date) return 'N/A';
+          
+          return date.toLocaleTimeString();
+        }
+      }
+    });
+    
+    app.mount('#app');
+  </script>
+</body>
+</html>

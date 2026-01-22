@@ -1,0 +1,1 @@
+.scan-box{box-shadow:#00000080 0 0 0 5000px}.scanning{background:linear-gradient(#fff0,80%,#60a5facc);animation:move 2s linear infinite;-webkit-animation:move 2s linear infinite}@keyframes move{0%{transform:translateY(-126px)}to{transform:translateY(400px)}}#my-video{object-fit:cover;object-position:center center}
