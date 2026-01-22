@@ -31,13 +31,17 @@ jobs:
 
       - name: Organize output
         run: |
-          mkdir final_dist
-          # Move main build (V1) to MultiQRcodeV1 subfolder
-          mv dist final_dist/MultiQRcodeV1
+          mkdir -p final_dist/projects
           
-          # Copy AnotherWay (V2) to MultiQRcodeV2 subfolder
-          mkdir -p final_dist/MultiQRcodeV2
-          cp -r AnotherWay/* final_dist/MultiQRcodeV2/
+          # Move main build (V1) to MultiQRcodeV1 subfolder inside projects
+          mv dist final_dist/projects/MultiQRcodeV1
+          
+          # Copy AnotherWay (V2) to MultiQRcodeV2 subfolder inside projects
+          mkdir -p final_dist/projects/MultiQRcodeV2
+          cp -r AnotherWay/* final_dist/projects/MultiQRcodeV2/
+          
+          # Add .nojekyll to ensure files starting with _ are not ignored
+          touch final_dist/.nojekyll
           
           # Verify structure
           ls -R final_dist
